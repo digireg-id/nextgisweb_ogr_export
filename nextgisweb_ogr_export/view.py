@@ -1,31 +1,90 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import subprocess
 import tempfile
 from shutil import rmtree
-from sys import path
 from zipfile import ZipFile, ZIP_DEFLATED
 
 import codecs
-import json
-import subprocess
-
 import geojson
 import os
-from osgeo import ogr
-from pyramid.response import Response, FileResponse
 import pyramid.httpexceptions as exc
+from os import path
+from osgeo import ogr
+from pyramid.response import FileResponse
+
 from nextgisweb import layer
 from nextgisweb.feature_layer import IFeatureLayer
 from nextgisweb.feature_layer.view import ComplexEncoder
 from nextgisweb.resource import resource_factory, DataScope
-from nextgisweb.vector_layer import VectorLayer
+
+REPLACEMENTS = {
+    'esri shapefile': 'shp',
+    'mapinfo file': 'tab',
+    'geoconcept': 'gxt',
+    'interlis 1': 'itf',
+    'interlis 2': 'xtf',
+    'gpstrackmaker': 'gtm',
+
+    #'sqlite': 'sqlite',
+    #'splite': 'splite',
+    #'pcidsk'
+}
+
+EXCLUDED_DRIVERS = [
+    'htf',
+    'openair',
+    'segy',
+    'arcgen',
+    'aeronavfaa',
+    'mssqlspatial',
+    'gme',
+    'cartodb',
+    'mysql',
+    'edigeo',
+    'uk .ntf',
+    's57',
+    'nas',
+    'idrisi',
+    'memory',
+    'xplane',
+    'rec',
+    'couchdb',
+    'vrt',
+    'avcbin',
+    'walk',
+    'vfk',
+    'tiger',
+    'segukooa',
+    'pds',
+    'wfs',
+    'openfilegdb',
+    'avce00',
+    'geomedia',
+    'ogdi',
+    'postgresql',
+    'sua',
+    'gpsbabel', #???
+    'svg',
+    'odbc',
+    'dods',
+    'elasticsearch',
+    'osm',
+    'xls',
+    'sdts',
+]
+
+ADDITIONAL_FLAGS = {
+    'csv': ['-lco', 'GEOMETRY=AS_XY'],
+    'shp': ['-lco', 'ENCODING=UTF-8']
+}
 
 
 def setup_pyramid(comp, config):
 
     config.add_route(
-        'feature_layer.feature.item', '/api/resource/{id}/ogr_export/{fmt}',
+        'feature_layer.ogr_export.export', '/resource/{id}/ogr_export/{fmt}',
         factory=resource_factory) \
         .add_view(ogr_export, context=IFeatureLayer, request_method='GET')
 
@@ -36,23 +95,24 @@ def ogr_export(resource, request):
     # check
     fmt = request.matchdict['fmt']
     if fmt not in get_driver_names():
-        raise exc.HTTPInternalServerError
+        raise exc.HTTPInternalServerError('Unsupported format!')
 
     #create temporary dir
     zip_dir = tempfile.mkdtemp()
 
     # save layers to geojson (FROM FEATURE_LAYER)
-    json_path = path.join(zip_dir, '%s.%s' % (layer.display_name, 'json'))
-    _save_resource_to_file(layer, json_path, single_geom=fmt == 'csv')
+    json_path = path.join(zip_dir, '%s.%s' % (resource.display_name, 'json'))
+    _save_resource_to_file(resource, json_path, single_geom=fmt == 'csv')
 
-    export_path = path.join(zip_dir, '%s.%s' % (layer.display_name, fmt))
+    # convert
+    export_path = path.join(zip_dir, '%s.%s' % (resource.display_name, fmt))
     _convert_json(json_path, export_path, fmt)
+
     # remove json
     os.remove(json_path.encode('utf-8'))
 
-
+    # write archive
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
-        # write archive
         zip_file = ZipFile(temp_file, mode="w", compression=ZIP_DEFLATED)
         zip_subpath = resource.display_name + '/'
 
@@ -71,7 +131,7 @@ def ogr_export(resource, request):
             content_type=bytes('application/zip'),
             request=request
         )
-        # response.content_disposition = 'attachment; filename="%s"' % focl_resource.display_name.encode('utf-8')
+        response.content_disposition = 'attachment; filename="%s.%s.zip"' % (resource.display_name.encode('utf-8'), fmt)
         return response
 
 
@@ -99,29 +159,34 @@ def _save_resource_to_file(vector_resource, file_path, single_geom=False):
 
 
 def _convert_json(in_file_path, out_file_path, fmt):
-    # get ext
+    fmt_norm = fmt
+    if fmt in REPLACEMENTS.values():
+        for k,v in REPLACEMENTS.iteritems():
+            if v == fmt:
+                fmt_norm = k
+                break
 
-
-    # create
     params = ['ogr2ogr',
-              '-f', 'KML',
+              '-f', fmt_norm,
               out_file_path.encode('utf-8'),
               in_file_path.encode('utf-8'),
               '-s_srs', 'EPSG:3857',
               '-t_srs', 'EPSG:4326',
              ]
 
-    if fmt == 'csv':
-        params.extend(['-lco', 'GEOMETRY=AS_XY'])
+    if fmt in ADDITIONAL_FLAGS.keys():
+        params.extend(ADDITIONAL_FLAGS[fmt])
 
     subprocess.check_call(params)
-
 
 def get_driver_names():
     formats = set()
 
     for i in range(ogr.GetDriverCount()):
         driver = ogr.GetDriver(i)
-        formats.append(driver.GetName())
+        name = driver.GetName().lower()
+        if name in REPLACEMENTS.keys():
+            name = REPLACEMENTS[name]
+        formats.add(name)
 
     return formats
