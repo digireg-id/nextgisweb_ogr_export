@@ -6,5 +6,5 @@ NextGIS Web module for export vector layers throw ogr
     /resource/12/ogr_export/shp  
     /resource/12/ogr_export/tab  
     /resource/12/ogr_export/gpkg
-    /resource/12/ogr_export/sqlite
+    /resource/12/ogr_export/sqlite  
     etc
