@@ -12,9 +12,7 @@ entry_points = {
         'nextgisweb_ogr_export = nextgisweb_ogr_export:pkginfo',
     ],
 
-    'nextgisweb.amd_packages': [
-        'nextgisweb_ogr_export = nextgisweb_ogr_export:amd_packages',
-    ],
+    'nextgisweb.amd_packages': [],
 
 }
 

@@ -6,7 +6,7 @@ from nextgisweb.component import Component
 
 @Component.registry.register
 class OgrExportComponent(Component):
-    identity = 'OgrExport'
+    identity = 'ogr_export'
 
     def initialize(self):
         pass
@@ -17,8 +17,11 @@ class OgrExportComponent(Component):
 
 
 def pkginfo():
-    return dict(components=dict(
-        ogr_export="nextgisweb_ogr_export"))
+    return dict(
+        components=dict(
+            ogr_export="nextgisweb_ogr_export"
+        )
+    )
 
 
 def amd_packages():

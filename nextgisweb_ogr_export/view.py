@@ -14,7 +14,6 @@ from os import path
 from osgeo import ogr
 from pyramid.response import FileResponse
 
-from nextgisweb import layer
 from nextgisweb.feature_layer import IFeatureLayer
 from nextgisweb.feature_layer.view import ComplexEncoder
 from nextgisweb.resource import resource_factory, DataScope
