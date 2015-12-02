@@ -1,5 +1,10 @@
-# nextgisweb_ogr_export
-<<<<<<< HEAD
-NextGIS Web module for export vector layers throw ogr 
+NextGIS Web module for export vector layers through OGR
 =======
->>>>>>> b047a05a9a28efb0a16e24347646a4de3290a936
+  
+1. Install with pip  
+2. For vector layer use:   
+    /resource/12/ogr_export/shp  
+    /resource/12/ogr_export/tab  
+    /resource/12/ogr_export/gpkg  
+    /resource/12/ogr_export/sqlite  
+    etc
