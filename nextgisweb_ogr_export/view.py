@@ -79,6 +79,10 @@ ADDITIONAL_FLAGS = {
     'shp': ['-lco', 'ENCODING=UTF-8']
 }
 
+SINGLE_GEOM_FORMATS = [
+    'csv',
+]
+
 
 def setup_pyramid(comp, config):
 
@@ -99,12 +103,14 @@ def ogr_export(resource, request):
     #create temporary dir
     zip_dir = tempfile.mkdtemp()
 
+    export_name = 'resource_%s' % resource.id  #resource.display_name
+
     # save layers to geojson (FROM FEATURE_LAYER)
-    json_path = path.join(zip_dir, '%s.%s' % (resource.display_name, 'json'))
-    _save_resource_to_file(resource, json_path, single_geom=fmt == 'csv')
+    json_path = path.join(zip_dir, '%s.%s' % (export_name, 'json'))
+    _save_resource_to_file(resource, json_path, single_geom=(fmt in SINGLE_GEOM_FORMATS))
 
     # convert
-    export_path = path.join(zip_dir, '%s.%s' % (resource.display_name, fmt))
+    export_path = path.join(zip_dir, '%s.%s' % (export_name, fmt))
     _convert_json(json_path, export_path, fmt)
 
     # remove json
@@ -113,7 +119,7 @@ def ogr_export(resource, request):
     # write archive
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
         zip_file = ZipFile(temp_file, mode="w", compression=ZIP_DEFLATED)
-        zip_subpath = resource.display_name + '/'
+        zip_subpath = export_name + '/'
 
         for file_name in os.listdir(zip_dir):
             src_file = path.join(zip_dir, file_name)
@@ -130,7 +136,7 @@ def ogr_export(resource, request):
             content_type=bytes('application/zip'),
             request=request
         )
-        response.content_disposition = 'attachment; filename="%s.%s.zip"' % (resource.display_name.encode('utf-8'), fmt)
+        response.content_disposition = u'attachment; filename="%s.%s.zip"' % (export_name.encode('utf-8'), fmt)
         return response
 
 
