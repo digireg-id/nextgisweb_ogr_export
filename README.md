@@ -1,4 +1,4 @@
-NextGIS Web module for export vector layers throw ogr 
+NextGIS Web module for export vector layers through OGR
 =======
   
 1. Install with pip  
