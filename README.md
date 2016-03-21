@@ -9,6 +9,10 @@ NextGIS Web module for export vector layers through OGR
     /resource/12/ogr_export/sqlite  
     etc
 
+License information:
+-------------
+This program is licensed under GNU GPL v2 or any later version
+
 Commercial support
 ----------
 Need to fix a bug or add a feature to NextGIS Web OGR export? We provide custom development and support for this software. [Contact us](http://nextgis.ru/en/contact/) to discuss options!
