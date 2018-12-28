@@ -15,7 +15,7 @@ from osgeo import ogr
 from pyramid.response import FileResponse
 
 from nextgisweb.feature_layer import IFeatureLayer
-from nextgisweb.feature_layer.view import ComplexEncoder
+from nextgisweb.geojson import Encoder
 from nextgisweb.resource import resource_factory, DataScope
 
 REPLACEMENTS = {
@@ -157,7 +157,7 @@ def _save_resource_to_file(vector_resource, file_path, single_geom=False):
     query.geom(single_part=single_geom)
     result = CRSProxy(query())
 
-    gj = geojson.dumps(result, ensure_ascii=False, cls=ComplexEncoder)
+    gj = geojson.dumps(result, ensure_ascii=False, cls=Encoder)
     with codecs.open(file_path.encode('utf-8'), 'w', encoding='utf-8') as f:
         f.write(gj)
 
